@@ -46,3 +46,62 @@ def add_book(request):
             return redirect('add_book')
     else:
         return render(request, 'add_book.html')
+
+
+# Retrieve Book Endpoint
+@csrf_exempt
+def retrieve_book(request, isbn):
+    try:
+        book = get_object_or_404(Book, isbn=isbn)
+        if request.content_type == 'application/json':
+            data = {
+                'title': book.title,
+                'author': book.author,
+                'published_date': book.published_date,
+                'isbn': book.isbn,
+                'price': book.price,
+                'stock_quantity': book.stock_quantity
+            }
+            return JsonResponse(data)
+        else:
+            context = {
+                'book': book
+            }
+            return render(request, 'book_detail.html', context)
+    except Book.DoesNotExist:
+        return JsonResponse({'error': 'Book not found'}, status=404)
+
+# Update Stock Quantity Endpoint
+@csrf_exempt
+def update_stock(request, isbn):
+    if request.method == 'PUT':
+        if request.content_type == 'application/json':
+            data = json.loads(request.body)
+            stock_quantity = data.get('stock_quantity')
+            if stock_quantity is not None:
+                try:
+                    book = get_object_or_404(Book, isbn=isbn)
+                    book.stock_quantity = stock_quantity
+                    book.save()
+                    return JsonResponse({'status': 'Stock updated'})
+                except Book.DoesNotExist:
+                    return JsonResponse({'error': 'Book not found'}, status=404)
+            else:
+                return JsonResponse({'error': 'Stock quantity not provided'}, status=400)
+        else:
+            return JsonResponse({'error': 'Invalid content type'}, status=400)
+    else:
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+# Delete Book Endpoint
+@csrf_exempt
+def delete_book(request, isbn):
+    if request.method == 'DELETE':
+        try:
+            book = get_object_or_404(Book, isbn=isbn)
+            book.delete()
+            return JsonResponse({'status': 'Book deleted'})
+        except Book.DoesNotExist:
+            return JsonResponse({'error': 'Book not found'}, status=404)
+    else:
+        return JsonResponse({'error': 'Method not allowed'}, status=405)    
