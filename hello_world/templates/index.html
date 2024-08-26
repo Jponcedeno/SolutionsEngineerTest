@@ -21,22 +21,100 @@
         <header class="App-header">
             <img src="{% static 'Octocat.png' %}" class="App-logo" alt="logo" />
             <p>
-                AgVend Digital Solutions  <span class="heart">♥️</span> Django
+                AgVend Digital Solutions <span class="heart">♥️</span> Django
             </p>
             <p class="small">
                 Edit <code>hello_world/templates/index.html</code> and see changes live!
             </p>
             <p>
-                <a href="{% url 'add_book' %}">Add a New Book</a>
+                <a href="#" onclick="openAddBookModal()">Add a New Book</a>
             </p>
             <p>Books in Library: {{ book_count }} </p>
-            <ul>
+            <ul id="book-list">
                 {% for book in books %}
-                    <li>{{ book.title }} by {{ book.author }}</li>
+                    <li>
+                        {{ book.title }} by {{ book.author }}
+                        <button onclick="viewBookDetails('{{ book.isbn }}')">View</button>
+                        <button onclick="deleteBook('{{ book.isbn }}')">Delete</button>
+                    </li>
                 {% endfor %}
             </ul>
         </header>
     </div>
+
+    <!-- Add Book Modal -->
+    <div id="add-book-modal" style="display:none;">
+        <h2>Add a New Book</h2>
+        <form id="add-book-form">
+            <label>Title: <input type="text" name="title" required></label><br>
+            <label>Author: <input type="text" name="author" required></label><br>
+            <label>Published Date: <input type="date" name="published_date" required></label><br>
+            <label>ISBN: <input type="text" name="isbn" required></label><br>
+            <label>Price: <input type="number" name="price" step="0.01" required></label><br>
+            <label>Stock Quantity: <input type="number" name="stock_quantity" required></label><br>
+            <button type="submit">Add Book</button>
+        </form>
+        <button onclick="closeAddBookModal()">Close</button>
+    </div>
+
+    <script>
+        function openAddBookModal() {
+            document.getElementById('add-book-modal').style.display = 'block';
+        }
+
+        function closeAddBookModal() {
+            document.getElementById('add-book-modal').style.display = 'none';
+        }
+
+        document.getElementById('add-book-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const bookData = Object.fromEntries(formData.entries());
+
+            fetch('/add-book/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify(bookData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.id) {
+                    alert('Book added successfully!');
+                    location.reload();  // Reload the page to show the new book
+                } else {
+                    alert('Error adding book.');
+                }
+            });
+        });
+
+        function viewBookDetails(isbn) {
+            fetch(`/books/${isbn}/`)
+            .then(response => response.json())
+            .then(data => {
+                alert(`Title: ${data.title}\nAuthor: ${data.author}\nPublished Date: ${data.published_date}\nISBN: ${data.isbn}\nPrice: $${data.price}\nStock Quantity: ${data.stock_quantity}`);
+            });
+        }
+
+        function deleteBook(isbn) {
+            fetch(`/books/${isbn}/delete/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => {
+                if (response.status === 204) {
+                    alert('Book deleted successfully!');
+                    location.reload();  // Reload the page to remove the deleted book
+                } else {
+                    alert('Error deleting book.');
+                }
+            });
+        }
+    </script>
 </body>
 
 </html>
