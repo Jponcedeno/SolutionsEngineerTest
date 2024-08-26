@@ -27,7 +27,10 @@ urlpatterns = [
     path("", core_views.index),
     path("admin/", admin.site.urls),
     path("__reload__/", include("django_browser_reload.urls")),
-    path("add-book", core_views.add_book, name="add_book")
+    path("add-book", core_views.add_book, name="add_book"),
+    path('retrieve-book/<isbn>/', core_views.retrieve_book, name='retrieve_book'),
+    path('update-stock/<isbn>/', core_views.update_stock, name='update_stock'),
+    path('delete-book/<isbn>/', core_views.delete_book, name='delete_book')
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
